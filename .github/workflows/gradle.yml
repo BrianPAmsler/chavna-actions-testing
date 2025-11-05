@@ -24,6 +24,7 @@ env:
 jobs:
   version-test:
     runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main'
     env:
       BUILD_FILE_PATH: ./backend/pantryproject/build.gradle
     steps:
@@ -107,6 +108,7 @@ jobs:
     permissions:
       contents: read
     needs: version-test
+    if: ${{ ! failure() && ! cancelled() }}
 
     steps:
     - uses: actions/checkout@v4
