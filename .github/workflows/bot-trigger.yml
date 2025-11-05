@@ -11,6 +11,8 @@ on:
 jobs:
   increment:
     runs-on: ubuntu-latest
+    env:
+      BUILD_FILE_PATH: ./backend/pantryproject/build.gradle
     steps:
       - uses: actions/checkout@v4
         with:
