@@ -2,10 +2,11 @@
 name: Bot Push
 
 on:
-  push:
+  workflow_run:
+    workflows: [Backend Build]
+    types:
+      - completed
     branches-ignore: [ "main" ]
-    paths:
-      - 'backend/**'
 
 jobs:
   increment:
