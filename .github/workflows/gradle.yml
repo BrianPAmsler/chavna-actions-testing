@@ -19,7 +19,7 @@ on:
 
 env:
   ELASTIC_BEANSTALK_NAME: chavna2
-  ELASTIC_BEANSTALK_ENV_NAME: Chavna2-env
+  ELASTIC_BEANSTALK_ENV_NAME: Chavna2-env 
 
 jobs:
   increment:
