@@ -22,6 +22,82 @@ env:
   ELASTIC_BEANSTALK_ENV_NAME: Chavna2-env 
 
 jobs:
+  version-test:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_FILE_PATH: ./backend/pantryproject/build.gradle
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          github_token: ${{ secrets.BOT_ACCESS_TOKEN }}
+          ref: main
+      - name: Get Main Version
+        run: |
+          VERSION=""
+
+          regex="version = '([^\n]*)'"
+          file_contents=$(cat $BUILD_FILE_PATH)
+          if [[ "$file_contents" =~ $regex ]]; then
+            VERSION=${BASH_REMATCH[1]}
+          fi
+
+          echo "MAIN_VERSION=$VERSION" >> $GITHUB_ENV
+          
+      - uses: actions/checkout@v4
+        with:
+          github_token: ${{ secrets.BOT_ACCESS_TOKEN }}
+          ref: ${{ github.event.workflow_run.head_branch }}
+      - name: Get Current Version
+        run: |
+          VERSION=""
+
+          regex="version = '([^\n]*)'"
+          file_contents=$(cat $BUILD_FILE_PATH)
+          if [[ "$file_contents" =~ $regex ]]; then
+            VERSION=${BASH_REMATCH[1]}
+          fi
+
+          echo "CURRENT_VERSION=$VERSION" >> $GITHUB_ENV
+          
+          
+      - name: Compare Versions
+        run: |
+          # Return 1 if a leq b
+          major_a=$(echo "$CURRENT_VERSION" | cut -d'.' -f1)
+          minor_a=$(echo "$CURRENT_VERSION" | cut -d'.' -f2)
+          patch_a=$(echo "$CURRENT_VERSION" | cut -d'.' -f3)
+
+          major_b=$(echo "$MAIN_VERSION" | cut -d'.' -f1)
+          minor_b=$(echo "$MAIN_VERSION" | cut -d'.' -f2)
+          patch_b=$(echo "$MAIN_VERSION" | cut -d'.' -f3)
+
+          if [[ $major_a -lt $major_b ]]; then
+            LTE=1 
+          elif [[ $major_a -gt $major_b ]]; then
+            LTE=0
+          fi
+
+          if [[ $minor_a -lt $minor_b ]]; then
+            LTE=1
+          elif [[ $minor_a -gt $minor_b ]]; then
+            LTE=0
+          fi  
+
+          if [[ $patch_a -le $patch_b ]]; then
+            LTE=1
+          else
+            LTE=0
+          fi
+
+          if [[ $LTE -eq 1 ]]; then
+            echo "Project version must be greater than verson on main."
+            echo "Main version: $MAIN_VERSION"
+            echo "Branch version: $CURRENT_VERSION"
+            echo "Please update the version in $BUILD_FILE_PATH"
+
+            exit 1
+          fi          
+
   build:
 
     runs-on: ubuntu-latest
@@ -30,6 +106,7 @@ jobs:
       version-label: ${{ steps.jar.outputs.VERSION_LABEL }}
     permissions:
       contents: read
+    needs: version-test
 
     steps:
     - uses: actions/checkout@v4
